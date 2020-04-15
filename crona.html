@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js'></script><!-- 2019-01-25 https://cdnjs.com/libraries/Chart.js -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.22/vue.min.js'></script><!-- 2019-01-22 https://cdnjs.com/libraries/vue -->
+</head>
+<body>
+  <canvas id='chart' height='200'></canvas><br>
+  <div id='vue_example'></div>
+  <script>
+    let vue_example;
+    let idx = true;
+    let res;
+    function api() {
+      let arr_name, arr_value;
+      let request = new XMLHttpRequest();
+      request.open('GET', 'https://covid19-japan-web-api.now.sh/api/v1/prefectures', true);
+      request.responseType = 'json';
+      request.onload = function() {
+        res = this.response;
+        x = 2;
+        arr_name = this.response.map((pref)=>{
+          return pref.name_ja;
+        });
+        arr_cases = this.response.map((pref)=>{
+          return pref.cases;
+        });
+
+        if(idx===true) {
+          idx=false;
+          vue_example = new Vue( {
+          el: '#vue_example',
+
+          template: `<div>
+            <table  border="1">
+              <tr>
+                <th>都道府県</th>
+                <th>感染者数</th>
+              </tr>
+              <tr v-for="(it,idx) in labels">
+                <th>{{it}}</th>
+                <th>{{ values[idx] }} 人</th>
+              </tr> 
+            </table>
+            <div id="value">
+            </div>`,
+            data: {
+              labels: arr_name,
+              values: arr_cases,
+              label: 'Hello Vue.js!',
+            },
+
+            methods: {
+              addItem: function() {
+                let request = new XMLHttpRequest();
+                request.open('GET', 'https://covid19-japan-web-api.now.sh/api/v1/prefectures', true);
+                request.responseType = 'json';
+                request.onload = function() {
+                  res = this.response;
+                  x = 2;
+                  arr_cases = this.response.map((pref)=>{
+                    return pref.cases;
+                  });
+                  this.values =    arr_cases;
+                }
+                request.send();
+              }
+            },
+
+            watch: {
+              labels: function () {
+                chart.data.labels = this.labels
+                chart.data.datasets[0].data = this.values
+                chart.update()
+              },
+            },
+          } )
+
+          var chart = new Chart( document.getElementById('chart').getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: vue_example.labels,
+              datasets: [ { label: 'コロナウイルス感染者数', data: vue_example.values, backgroundColor: "rgba(39,39,201,0.5)" }, ],
+            },
+        } )
+        }
+        // let arr_value = this.response.map((pref)=>{
+        //   return {name: pref.name_ja, cases: pref.cases, deaths: pref.deaths};
+        // });
+        console.log(res);
+        console.log(res[0].name_ja);
+        console.log(res[0].cases);
+        console.log(res[0].deaths);
+        console.log(arr_name);
+      }
+      request.send();
+    }
+    api();
+    // window.addEventListener('load',function(){
+    //   setInterval('location.reload()',5000);
+    // });
+    // setInterval(api, 5);
+
+  </script>
+</body>
+</html>
